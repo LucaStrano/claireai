@@ -3,8 +3,10 @@ from json import dumps
 
 from claireai.core.configs import AgentConfigs
 
+from pathlib import Path
 
-def yaml_to_agent_configs(yaml_path: str) -> AgentConfigs:
+
+def yaml_to_agent_configs(yaml_path: str | Path) -> AgentConfigs:
     try:
         with open(yaml_path, "r") as file:
             yaml_content = file.read()
@@ -13,9 +15,8 @@ def yaml_to_agent_configs(yaml_path: str) -> AgentConfigs:
 
     except YAMLError as e:
         import os
-        import pathlib
 
-        parent_dir_path = pathlib.Path(__file__).parent.resolve()
+        parent_dir_path = Path(__file__).parent.resolve()
         parent_dir_name = parent_dir_path.name
         print(parent_dir_name)
         print(parent_dir_path)

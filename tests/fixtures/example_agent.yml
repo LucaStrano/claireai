@@ -1,0 +1,26 @@
+agent_configs:
+  name: agent_name
+  description: "Agent description"
+  is_callable: true # can call from the API
+  llm:
+    type: OpenAILike
+    model: model_name
+    api_key_env: null # env var for the API key
+    args:
+      base_url: "http://localhost:8080/v1"
+      temperature: 0.6
+  strategy:
+    type: ReACT
+    args:
+      max_turns: 10
+  tools:
+    - tool_name1
+    - tool_name2
+  delegations: # pass control to an agent, then back to this one
+    - delegation_agent1
+  handoffs: # agents to pass execution to
+    - handoff_agent1
+    - handoff_agent2
+  prompts:
+    - prompts/system.j2
+    - prompts/user.j2

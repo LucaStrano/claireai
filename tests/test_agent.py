@@ -1,6 +1,8 @@
 from claireai.core.agent import Agent, AGENT_DEFAULT_DESCRIPTION
 from claireai.core.configs import AgentConfigs
 
+from pathlib import Path
+
 
 class DummyLLM:
     pass
@@ -92,3 +94,20 @@ def test_agent_from_config_full():
     assert agent.handoffs == ["h1", "h2"]
     assert agent.prompts == {"system": "Be concise."}
     assert agent.extras == {"extra": 1}
+
+
+def test_agent_from_yaml_configs():
+    from claireai.utils.converters import yaml_to_agent_configs
+
+    yaml_path = Path(__file__).parent / "fixtures" / "example_agent.yml"
+
+    config_from_path = yaml_to_agent_configs(yaml_path)
+    config_from_str = yaml_to_agent_configs(str(yaml_path))
+
+    agent_from_conf_instance = Agent.from_config(config_from_path)
+    agent_from_conf_file = Agent.from_config_file(yaml_path)
+
+    assert isinstance(config_from_path, AgentConfigs)
+    assert isinstance(config_from_str, AgentConfigs)
+    assert isinstance(agent_from_conf_instance, Agent)
+    assert isinstance(agent_from_conf_file, Agent)

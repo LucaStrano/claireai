@@ -3,8 +3,10 @@ from pydantic_core import PydanticSerializationError
 
 from typing import Optional, Any
 
-
 from .configs import AgentConfigs
+from claireai.utils.converters import yaml_to_agent_configs
+
+from pathlib import Path
 
 AGENT_DEFAULT_DESCRIPTION: str = "No description provided."
 
@@ -78,12 +80,30 @@ class Agent:
 
     @classmethod
     def from_config(cls, config: AgentConfigs) -> "Agent":
-        """Create an Agent instance from an AgentConfig instance."""
+        """Create an Agent instance from an AgentConfig instance.
+        Args:
+            config (AgentConfigs): The config used for the agent.
+        Raises:
+            ValueError: If the config is invalid.
+        """
         try:
             agent = cls(**config.model_dump(warnings="error"))
             return agent
         except PydanticSerializationError as e:
             raise ValueError(
-                f"Error creating Agent{f' {config.name}' if config.name else ''} from config file,",
-                f"make sure the config is valid. Serialization Error: {e}",
-            )
+                f"Error creating Agent{f' {config.name}' if config.name else ''} from config file,"
+                "make sure the config is valid.",
+            ) from e
+
+    @classmethod
+    def from_config_file(cls, config_path: str | Path) -> "Agent":
+        """Create an Agent instance from a config.yml file path.
+        Args:
+            config_path (str | Path): The YAML config used for the agent.
+        Raises:
+            YAMLError: If the config file is malformed.
+            KeyError: If required keys are missing in the config file.
+
+        """
+        config = yaml_to_agent_configs(config_path)
+        return cls.from_config(config)
