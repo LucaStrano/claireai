@@ -16,8 +16,6 @@ agent_configs:
   tools:
     - tool_name1
     - tool_name2
-  delegations: # pass control to an agent, then back to this one
-    - delegation_agent1
   handoffs: # agents to pass execution to
     - handoff_agent1
     - handoff_agent2

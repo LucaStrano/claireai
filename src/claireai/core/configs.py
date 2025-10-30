@@ -9,9 +9,6 @@ class AgentConfigs(BaseModel):
     llm: Any = None  # Placeholder for LLM instance
     strategy: Any = None  # Placeholder for strategy instance
     tools: list[Any] = Field(default_factory=list)  # Placeholder for tool instances
-    delegations: list[Any] = Field(
-        default_factory=list
-    )  # Placeholder for delegation instances
     handoffs: list[Any] = Field(
         default_factory=list
     )  # Placeholder for handoff instances

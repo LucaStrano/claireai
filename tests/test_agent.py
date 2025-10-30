@@ -16,7 +16,6 @@ def test_agent_init_with_all_attributes():
     llm = DummyLLM()
     strategy = DummyStrategy()
     tools = [object(), object()]
-    delegations = ["agent_a", "agent_b"]
     handoffs = ["handoff_a"]
     prompts = {"system": "You are an helpful assistant."}
     extras = {"extra1": 1, "extra2": "extra_value"}
@@ -28,7 +27,6 @@ def test_agent_init_with_all_attributes():
         llm=llm,
         strategy=strategy,
         tools=tools,
-        delegations=delegations,
         handoffs=handoffs,
         prompts=prompts,
         extras=extras,
@@ -40,7 +38,6 @@ def test_agent_init_with_all_attributes():
     assert agent.llm is llm
     assert agent.strategy is strategy
     assert agent.tools == tools
-    assert agent.delegations == delegations
     assert agent.handoffs == handoffs
     assert agent.prompts == prompts
     assert agent.extras == extras
@@ -58,13 +55,13 @@ def test_agent_init_defaults_when_none():
     assert agent.llm is llm
     assert agent.strategy is strategy
     assert agent.tools == []
-    assert agent.delegations == []
     assert agent.handoffs == []
     assert agent.prompts == {}
     assert agent.extras == {}
 
 
 def test_agent_from_config_full():
+
     llm = DummyLLM()
     strategy = DummyStrategy()
 
@@ -75,7 +72,6 @@ def test_agent_from_config_full():
         llm=llm,
         strategy=strategy,
         tools=["t1", "t2"],
-        delegations=["d1"],
         handoffs=["h1", "h2"],
         prompts={"system": "Be concise."},
         extras={"extra": 1},
@@ -90,7 +86,6 @@ def test_agent_from_config_full():
     assert agent.llm is llm
     assert agent.strategy is strategy
     assert agent.tools == ["t1", "t2"]
-    assert agent.delegations == ["d1"]
     assert agent.handoffs == ["h1", "h2"]
     assert agent.prompts == {"system": "Be concise."}
     assert agent.extras == {"extra": 1}

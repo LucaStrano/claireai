@@ -47,9 +47,6 @@ def yaml_to_agent_configs(yaml_path: str | Path) -> AgentConfigs:
     # TODO create tools instances from configs
     tools = []
 
-    # TODO create delegation instance from configs
-    delegations = []
-
     # TODO create handoffs instances from configs
     handoffs = []
 
@@ -64,7 +61,6 @@ def yaml_to_agent_configs(yaml_path: str | Path) -> AgentConfigs:
             llm=llm,
             strategy=strategy,
             tools=tools,
-            delegations=delegations,
             handoffs=handoffs,
             prompts=prompts,
             extras=agent_conf.get("extras", {}),

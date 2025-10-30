@@ -34,11 +34,6 @@ class Agent:
     tools: list[Any] = Field(default_factory=list)  # Placeholder for tool instances
     """The tools available to the agent."""
 
-    delegations: list[Any] = Field(
-        default_factory=list
-    )  # Placeholder for delegation instances
-    """The Agents this agent can delegate tasks to."""
-
     handoffs: list[Any] = Field(
         default_factory=list
     )  # Placeholder for handoff instances
@@ -60,7 +55,6 @@ class Agent:
         llm: Any = None,
         strategy: Any = None,
         tools: Optional[list[Any]] = None,
-        delegations: Optional[list[Any]] = None,
         handoffs: Optional[list[Any]] = None,
         prompts: Optional[dict[str, str]] = None,
         extras: Optional[dict[str, Any]] = None,
@@ -73,7 +67,6 @@ class Agent:
         self.llm = llm
         self.strategy = strategy
         self.tools = tools if tools is not None else []
-        self.delegations = delegations if delegations is not None else []
         self.handoffs = handoffs if handoffs is not None else []
         self.prompts = prompts if prompts is not None else {}
         self.extras = extras if extras is not None else {}
