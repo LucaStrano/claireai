@@ -61,7 +61,6 @@ def test_agent_init_defaults_when_none():
 
 
 def test_agent_from_config_full():
-
     llm = DummyLLM()
     strategy = DummyStrategy()
 

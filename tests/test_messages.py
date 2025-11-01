@@ -1,11 +1,11 @@
-from claireai.core.messages import (
+from claireai.core.types.messages import (
     BaseMessage,
-    TextPart,
-    ImagePart,
     SystemMessage,
     DeveloperMessage,
     UserMessage,
     AIMessage,
+    ImagePart,
+    TextPart,
 )
 from typing import List
 
