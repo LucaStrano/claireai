@@ -1,14 +1,23 @@
-from typing import List, Optional, Any, Dict
+from typing import List, Optional, Any, Dict, TypeVar, Generic
 import abc
 
 from claireai.core.types.messages import BaseMessage
-
-from pydantic import BaseModel
+from claireai.core.types.responses import (
+    LLMResponse,
+    LLMCompletionUsage,
+    LLMToolCall,
+    Structure,
+    FinishReason,
+)
 
 from openai import AsyncOpenAI
+from openai.types.chat.chat_completion import ChatCompletion
+from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
+
+ClientT = TypeVar("ClientT")
 
 
-class LLM(abc.ABC):
+class LLM(abc.ABC, Generic[ClientT]):
     """
     Base Class for Language Models.
 
@@ -18,11 +27,11 @@ class LLM(abc.ABC):
 
     def __init__(
         self,
-        client: Any,
+        client: ClientT,
         model_name: str,
         gen_args: Dict[str, Any] = {},
     ):
-        self._client = client
+        self._client: ClientT = client
         self.model_name = model_name
         self.gen_args = gen_args
 
@@ -31,7 +40,7 @@ class LLM(abc.ABC):
         self,
         messages: List[BaseMessage],
         tools: Optional[List[Any]] = None,  # TODO: Define a BaseTool class
-    ) -> Any:
+    ) -> LLMResponse:
         """
         Generate a response.
 
@@ -47,9 +56,9 @@ class LLM(abc.ABC):
     async def generate_with_structured_output(
         self,
         messages: list[BaseMessage],
-        structure: BaseModel,
+        structure: type[Structure],
         tools: Optional[List[Any]] = None,
-    ) -> Any:
+    ) -> LLMResponse[Structure]:
         """
         Generate a structured response.
 
@@ -63,7 +72,7 @@ class LLM(abc.ABC):
         pass
 
 
-class OpenAIChatLLM(LLM):
+class OpenAIChatLLM(LLM[AsyncOpenAI]):
     """OpenAI Chat Model."""
 
     def __init__(
@@ -78,7 +87,7 @@ class OpenAIChatLLM(LLM):
         self,
         messages: List[BaseMessage],
         tools: Optional[List[Any]] = None,  # TODO: Define a BaseTool class
-    ) -> Any:
+    ) -> LLMResponse:
         """
         Generate a response.
 
@@ -86,21 +95,44 @@ class OpenAIChatLLM(LLM):
             messages (List[BaseMessage]): The list of prompt messages.
             tools (List[Any]): A list of tools.
         Returns:
-            Any: Response.
+            LLMResponse: Parsed response from the API.
         """
-        response = await self._client.chat.completions.create(
+        res: ChatCompletion = await self._client.chat.completions.create(
             messages=[m.to_llm_dict() for m in messages],
             model=self.model_name,
             **self.gen_args,
         )
-        return response  # TODO create a proper response object
+        c = res.choices[0]
+        return LLMResponse(
+            completion_id=res.id,
+            content=getattr(c.message, "content", ""),
+            model=res.model,
+            finish_reason=getattr(c, "finish_reason", FinishReason.MISSING),
+            reasoning=getattr(c.message, "reasoning", None),
+            parsed_content=None,
+            tool_calls=[
+                LLMToolCall(
+                    id=tool.id,
+                    name=tool.function.name,
+                    arguments=tool.function.arguments,
+                )
+                for tool in getattr(c.message, "tool_calls", []) or []
+            ],
+            completion_usage=LLMCompletionUsage(
+                completion_tokens=getattr(res.usage, "completion_tokens", None),
+                prompt_tokens=getattr(res.usage, "prompt_tokens", None),
+                total_tokens=getattr(res.usage, "total_tokens", None),
+            )
+            if hasattr(res, "usage")
+            else None,
+        )
 
     async def generate_with_structured_output(
         self,
         messages: list[BaseMessage],
-        structure: BaseModel,
+        structure: type[Structure],
         tools: Optional[List[Any]] = None,
-    ) -> Any:
+    ) -> LLMResponse[Structure]:
         """
         Generate a structured response.
 
@@ -109,13 +141,30 @@ class OpenAIChatLLM(LLM):
             structure (BaseModel): The Pydantic model defining the output structure.
             tools (List[Any]): A list of tools.
         Returns:
-            Any: Response.
+            LLMResponse[Structure]: Parsed response from the API.
         """
-        response = await self._client.chat.completions.parse(
+        res: ParsedChatCompletion = await self._client.chat.completions.parse(
             model=self.model_name,
             messages=[m.to_llm_dict() for m in messages],
             response_format=structure,
             **self.gen_args,
         )
-
-        return response  # TODO create a proper response object
+        c = res.choices[0]
+        # TODO: for now, structured output works without tools.
+        # With tools implemented, structured output will be handled as a "finish_tool".
+        return LLMResponse[structure](
+            completion_id=res.id,
+            content=getattr(c.message, "content", ""),
+            model=res.model,
+            finish_reason=getattr(c, "finish_reason", FinishReason.MISSING),
+            reasoning=getattr(c.message, "reasoning", None),
+            parsed_content=getattr(c.message, "parsed", None),
+            tool_calls=[],  # TODO: Extract tool calls from response if any
+            completion_usage=LLMCompletionUsage(
+                completion_tokens=getattr(res.usage, "completion_tokens", None),
+                prompt_tokens=getattr(res.usage, "prompt_tokens", None),
+                total_tokens=getattr(res.usage, "total_tokens", None),
+            )
+            if hasattr(res, "usage")
+            else None,
+        )

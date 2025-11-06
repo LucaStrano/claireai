@@ -7,6 +7,8 @@ from claireai.core.types.messages import (
     ToolMessage,
 )
 
+from claireai.core.types.responses import LLMCompletionUsage, LLMToolCall, LLMResponse
+
 __all__ = [
     "BaseMessage",
     "SystemMessage",
@@ -14,4 +16,7 @@ __all__ = [
     "UserMessage",
     "AIMessage",
     "ToolMessage",
+    "LLMCompletionUsage",
+    "LLMToolCall",
+    "LLMResponse",
 ]
