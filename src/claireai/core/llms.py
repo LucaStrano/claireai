@@ -1,6 +1,7 @@
 from typing import List, Optional, Any, Dict, TypeVar, Generic
 import abc
 
+from claireai.core.classes.configurable import Configurable
 from claireai.core.types.messages import BaseMessage
 from claireai.core.types.responses import (
     LLMResponse,
@@ -17,7 +18,7 @@ from openai.types.chat.parsed_chat_completion import ParsedChatCompletion
 ClientT = TypeVar("ClientT")
 
 
-class LLM(abc.ABC, Generic[ClientT]):
+class LLM(abc.ABC, Generic[ClientT], Configurable):
     """
     Base Class for Language Models.
 

@@ -1,7 +1,7 @@
 from pydantic import BaseModel, Field, ConfigDict
 from typing import Any, Generic
 
-from claireai.core.llms import LLM, ClientT
+from claireai.core.llms import ClientT
 
 
 class AgentConfigs(BaseModel):
@@ -27,6 +27,6 @@ class LLMConfigs(BaseModel, Generic[ClientT]):
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
-    client: LLM[ClientT]
+    client: ClientT
     model_name: str
     gen_args: dict[str, Any] = Field(default_factory=dict)
