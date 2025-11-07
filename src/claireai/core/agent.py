@@ -1,17 +1,16 @@
 from pydantic import Field
-from pydantic_core import PydanticSerializationError
 
 from typing import Optional, Any
 
-from .configs import AgentConfigs
 from claireai.utils.converters import yaml_to_agent_configs
+from claireai.core.classes.configurable import Configurable
 
 from pathlib import Path
 
 AGENT_DEFAULT_DESCRIPTION: str = "No description provided."
 
 
-class Agent:
+class Agent(Configurable):
     """Base class for all agents."""
 
     name: str
@@ -70,23 +69,6 @@ class Agent:
         self.handoffs = handoffs if handoffs is not None else []
         self.prompts = prompts if prompts is not None else {}
         self.extras = extras if extras is not None else {}
-
-    @classmethod
-    def from_config(cls, config: AgentConfigs) -> "Agent":
-        """Create an Agent instance from an AgentConfig instance.
-        Args:
-            config (AgentConfigs): The config used for the agent.
-        Raises:
-            ValueError: If the config is invalid.
-        """
-        try:
-            agent = cls(**config.model_dump(warnings="error"))
-            return agent
-        except PydanticSerializationError as e:
-            raise ValueError(
-                f"Error creating Agent{f' {config.name}' if config.name else ''} from config file,"
-                "make sure the config is valid.",
-            ) from e
 
     @classmethod
     def from_config_file(cls, config_path: str | Path) -> "Agent":
