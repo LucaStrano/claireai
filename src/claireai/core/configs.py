@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Any, Generic
 
 from claireai.core.llms import LLM, ClientT
@@ -24,6 +24,8 @@ class AgentConfigs(BaseModel):
 
 class LLMConfigs(BaseModel, Generic[ClientT]):
     """Configuration for an LLM instance."""
+
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     client: LLM[ClientT]
     model_name: str
