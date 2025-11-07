@@ -1,8 +1,12 @@
 from pydantic import BaseModel, Field
-from typing import Any
+from typing import Any, Generic
+
+from claireai.core.llms import LLM, ClientT
 
 
 class AgentConfigs(BaseModel):
+    """Configuration for an Agent instance."""
+
     name: str
     description: str = "No description provided."
     is_callable: bool = False
@@ -16,3 +20,11 @@ class AgentConfigs(BaseModel):
         default_factory=dict
     )  # Placeholder for prompt templates
     extras: dict[str, Any] = Field(default_factory=dict)
+
+
+class LLMConfigs(BaseModel, Generic[ClientT]):
+    """Configuration for an LLM instance."""
+
+    client: LLM[ClientT]
+    model_name: str
+    gen_args: dict[str, Any] = Field(default_factory=dict)
