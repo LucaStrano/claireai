@@ -3,12 +3,13 @@ import abc
 
 from claireai.core.classes.configurable import Configurable
 from claireai.core.types.messages import BaseMessage
+from claireai.core.output_parsers import OutputParser, OpenAIOutputParser
 from claireai.core.types.responses import (
     LLMResponse,
-    LLMCompletionUsage,
-    LLMToolCall,
+    # LLMCompletionUsage,
+    # LLMToolCall,
     Structure,
-    FinishReason,
+    # FinishReason,
 )
 
 from openai import AsyncOpenAI
@@ -23,17 +24,19 @@ class LLM(abc.ABC, Generic[ClientT], Configurable):
     Base Class for Language Models.
 
     The concern of this class is to adapt the injected client's API
-    into claireAI's unified response interface.
+    into claireAI's unified response interface by using an OutputParser.
     """
 
     def __init__(
         self,
         client: ClientT,
         model_name: str,
+        output_parser: OutputParser,
         gen_args: Dict[str, Any] = {},
     ):
         self._client: ClientT = client
         self.model_name = model_name
+        self._output_parser = output_parser
         self.gen_args = gen_args
 
     @abc.abstractmethod
@@ -49,7 +52,7 @@ class LLM(abc.ABC, Generic[ClientT], Configurable):
             messages (List[BaseMessage]): The list of prompt messages.
             tools (List[Any]): A list of tools.
         Returns:
-            Any: Response.
+            LLMResponse: Response.
         """
         pass
 
@@ -68,7 +71,7 @@ class LLM(abc.ABC, Generic[ClientT], Configurable):
             structure (BaseModel): The Pydantic model defining the output structure.
             tools (List[Any]): A list of tools.
         Returns:
-            Any: Response.
+            LLMResponse[Structure]: Response.
         """
         pass
 
@@ -80,9 +83,12 @@ class OpenAIChatLLM(LLM[AsyncOpenAI]):
         self,
         client: AsyncOpenAI,
         model_name: str,
+        output_parser: Optional[OpenAIOutputParser] = None,
         gen_args: Dict[str, Any] = {},
     ):
-        super().__init__(client, model_name, gen_args)
+        super().__init__(
+            client, model_name, output_parser or OpenAIOutputParser(), gen_args
+        )
 
     async def generate(
         self,
@@ -103,30 +109,7 @@ class OpenAIChatLLM(LLM[AsyncOpenAI]):
             model=self.model_name,
             **self.gen_args,
         )
-        c = res.choices[0]
-        return LLMResponse(
-            completion_id=res.id,
-            content=getattr(c.message, "content", ""),
-            model=res.model,
-            finish_reason=getattr(c, "finish_reason", FinishReason.MISSING),
-            reasoning=getattr(c.message, "reasoning", None),
-            parsed_content=None,
-            tool_calls=[
-                LLMToolCall(
-                    id=tool.id,
-                    name=tool.function.name,
-                    arguments=tool.function.arguments,
-                )
-                for tool in getattr(c.message, "tool_calls", []) or []
-            ],
-            completion_usage=LLMCompletionUsage(
-                completion_tokens=getattr(res.usage, "completion_tokens", None),
-                prompt_tokens=getattr(res.usage, "prompt_tokens", None),
-                total_tokens=getattr(res.usage, "total_tokens", None),
-            )
-            if hasattr(res, "usage")
-            else None,
-        )
+        return self._output_parser.parse(res)
 
     async def generate_with_structured_output(
         self,
@@ -150,22 +133,6 @@ class OpenAIChatLLM(LLM[AsyncOpenAI]):
             response_format=structure,
             **self.gen_args,
         )
-        c = res.choices[0]
         # TODO: for now, structured output works without tools.
         # With tools implemented, structured output will be handled as a "finish_tool".
-        return LLMResponse[structure](
-            completion_id=res.id,
-            content=getattr(c.message, "content", ""),
-            model=res.model,
-            finish_reason=getattr(c, "finish_reason", FinishReason.MISSING),
-            reasoning=getattr(c.message, "reasoning", None),
-            parsed_content=getattr(c.message, "parsed", None),
-            tool_calls=[],  # TODO: Extract tool calls from response if any
-            completion_usage=LLMCompletionUsage(
-                completion_tokens=getattr(res.usage, "completion_tokens", None),
-                prompt_tokens=getattr(res.usage, "prompt_tokens", None),
-                total_tokens=getattr(res.usage, "total_tokens", None),
-            )
-            if hasattr(res, "usage")
-            else None,
-        )
+        return self._output_parser.parse_structured(res, structure)
